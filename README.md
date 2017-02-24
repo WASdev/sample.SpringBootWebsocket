@@ -11,6 +11,7 @@ We're going to be building off Spring Boot's "gs-messaging-stomp-websocket" [sam
 * [Server Configuration](#server)
 * [Code Changes](#code)
 * [Final Issues](#issues)
+* [Conclusion](#conclusion)
 
 ## <a name="start"></a>Getting Started
 
@@ -351,3 +352,30 @@ Here, we register our `WebConfig` class (which also includes our `WebSocketConfi
 
 ## <a name="issues"></a>Final Issues
 
+There are just a few small changes we have to make before our WebSocket application can run on Liberty. We describe them here:
+
+### WebJars Locator
+
+Due to a [known issue](https://github.com/webjars/webjars-locator/issues/78) with the `webjars-locator` dependency and its compatibility with WebSphere (both traditional and Liberty), it doesn't work properly without some modifications (which are propesed in the linked issue). At the moment, we do not provide a modified version of this artifact which is WebSphere compatible; you'll have to modify the dependency URLs in `/src/main/resources/static/index.html` to include the version numbers of the dependencies or else they won't be found by the resource handler.
+
+For example, you'll need to change `/webjars/bootstrap/css/bootstrap.min.css` to `/webjars/bootstrap/3.3.7/css/bootstrap.min.css` and so on. The version numbers of each dependency are listed in `pom.xml`. 
+
+### SockJS
+
+You might also experience an issue with SockJS version compatibility. If you're getting a message such as `Incompatibile SockJS! Main site uses: "1.0.2", the iframe: "1.0.0"` in the web console when trying to connect to your web socket, you'll need to replace 
+
+`registry.addEndpoint("/gs-guide-websocket").withSockJS();`
+
+with
+
+`registry.addEndpoint("/gs-guide-websocket").withSockJS().setClientLibraryUrl("/webjars/sockjs-client/1.0.2/sockjs.min.js");`
+
+in your `WebSocketConfig` class. If you update the version of your `sockjs-client` dependency in the future, just remember to update the version number here and in `index.html`. 
+
+Although, these changes won't be necessary if a WebSphere-compatible version of `webjars-locator` is released in the future.
+
+## <a name="conclusion"></a>Conclusion
+
+Congratulations! You should now be able to run your WebSocket application on Liberty by executing `mvn install liberty:run-server`. By navigating to `http://localhost:9080/`, you should see the application appear and behave in the same way as it does standalone. Additionally, you'll see that a JAR named `WebsocketServerPackage.jar` was created in the `target` directory, which bundles your application with the Liberty server you configured into a standalone runnable JAR. 
+
+Please feel free to download our sample code from this repository, or create a Github Issue if you have any additional questions.
