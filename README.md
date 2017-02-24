@@ -10,12 +10,11 @@ We're going to be building off Spring Boot's "gs-messaging-stomp-websocket" [sam
 * [Modifying the POM](#pom)
 * [Server Configuration](#server)
 * [Code Changes](#code)
-* [Configuring WebJARS](#webjars)
 * [Remaining Issues](#issues)
 
 ## <a name="start"></a>Getting Started
 
-Start by downloading/cloning the code from Spring's "gs-messaging-stomp-websocket" [sample project](https://github.com/spring-guides/gs-messaging-stomp-websocket/). All the proceeding modifications will be made on the code in the ["complete" folder](https://github.com/spring-guides/gs-messaging-stomp-websocket/tree/master/complete) of that project.
+Start by downloading/cloning the code from Spring's "gs-messaging-stomp-websocket" [sample project](https://github.com/spring-guides/gs-messaging-stomp-websocket/). All the proceeding modifications will be made on the code in the ["complete" folder](https://github.com/spring-guides/gs-messaging-stomp-websocket/tree/master/complete) of that project. Thus, we suggest familiarizing yourself with that code and reading the guide before proceeding.
 
 ## <a name="pom"></a>Modifying the POM
 
@@ -31,7 +30,7 @@ First, set the packaging type to `liberty-assembly`. This can be added after the
 
 From our [Liberty Maven Plugin](https://github.com/WASdev/ci.maven) documentation:
 
-The `liberty-assembly` Maven packaging type is used to create a packaged Liberty profile server Maven artifact out of existing server installation, compressed archive, or another server Maven artifact. Any applications specified as Maven compile dependencies will be automatically packaged with the assembled server. Liberty features can also be installed and packaged with the assembled server.
+> The `liberty-assembly` Maven packaging type is used to create a packaged Liberty profile server Maven artifact out of existing server installation, compressed archive, or another server Maven artifact. Any applications specified as Maven compile dependencies will be automatically packaged with the assembled server. Liberty features can also be installed and packaged with the assembled server.
 
 ### Add Liberty Dependencies
 
@@ -215,9 +214,9 @@ The following is a list of each plugin that we added, along with some comments:
 
 ## <a name="server"></a>Server Configuration
 
-After modifying our POM, the next step is to create a `server.xml` file and add our server configuration. By default, this file should be located at `src/test/resources/server.xml`, although you can modify this under by changing the `configFile` configuration in the `liberty-maven-plugin` (we provide this code our example above, although it is commented out because we're using the default location for this sample project). 
+After modifying our POM, the next step is to create a `server.xml` file and add our server configuration. By default, this file should be located at `src/test/resources/server.xml`, although you can modify this by changing the `configFile` configuration parameter in the `liberty-maven-plugin` (we provide this code our example above, although it is commented out because we're using the default location for this sample project). 
 
-Create the file and add the following code:
+Once you have created your `server.xml`, add the following code:
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -244,13 +243,48 @@ Create the file and add the following code:
 There are a few notable things happening in this configuration:
 
 * We set the context root of our application to the server root. This is done in order to maintain consistency with the file paths specified in the sample project, as Spring Boot applications running on embedded servers are located at the server root. 
-* In our `featureManager`, we add the `servlet-3.1` feature as the application will be running as a servlet.
+* In our `featureManager`, we add the `servlet-3.1` Liberty feature as the application will be running as a servlet.
 * We set `<applicationManager autoExpand="true" />` to automatically expand our WAR file. Note if you have the WDT (WebSphere Development Tools) plugin installed in Eclipse, you might see an error on this line. You can ignore this, as it will go away when `server.xml` is copied to the server.
 
 ## <a name="code"></a>Code Changes
 
+We're now ready to make changes to our source code. This section is broken up by the type of changes we need to make.
 
-## <a name="webjars"></a>Configuring WebJARS
+### Startup Changes
+
+We previously briefly mentioned the importance of setting the `<start-class>` parameter in the POM properties. The importance of this is evident now, as we're about to change how our WebSocket application is launched. 
+
+Traditionally, a Spring Boot application running on an embedded server such as Tomcat simply calls `SpringApplication.run(...)` in its main class (in this case `hello.Application`). However, we must change this when deploying our application as a servlet to our Liberty server. Specifically, we're going to have our start class extend `SpringBootServletInitializer` in order to run our application as a WAR. Then, by setting this class as our `<start-class>` parameter, we specify (quite clearly) that our application starts its execution from this class. 
+
+To make these changes, replace the original code in `Application.java` with the following:
+
+```
+package hello;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+
+@SpringBootApplication
+public class Application extends SpringBootServletInitializer {
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(Application.class);
+    }
+    
+}
+```
+
+### Checkpoint
+
+If you've made it this far, you should done everything you need to successfully start your WebSocket application on a Liberty server. Take a minute to check whether you're on track. 
+
+Start the application (by running `mvn install liberty:run-server`) and access its context root (`http://localhost:9080/`). You should see the static `index.html` page being displayed. This is good news; it means the server started up and has successfully loaded your application source.
+ 
+However, you'll also notice (especially if you ran the project first as a Spring Boot standalone application) that the styling for the page is not correct. Additionally, the web socket is not actually functional, as the interface is not responsive. This is because there are some more changes you'll have to make for application to run properly when deployed as a WAR. 
+
+### WebSocket and WebJars Configuration
 
 
 
