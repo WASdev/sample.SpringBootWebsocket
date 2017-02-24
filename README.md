@@ -1,6 +1,6 @@
 # Integrating a Spring Boot WebSocket Project with Liberty Using Maven
 
-This tutorial demonstrates the entire process of modifying a sample Spring Boot WebSocket project to run as a packaged Liberty assembly. The end result is a standalone runnable JAR which contains the Websocket application deployed on a Liberty server.
+This tutorial demonstrates the entire process of modifying a sample Spring Boot WebSocket project to run as a packaged Liberty assembly. The end result is a standalone runnable JAR which contains the WebSocket application deployed on a Liberty server.
 
 We're going to be building off Spring Boot's "gs-messaging-stomp-websocket" [sample project](https://github.com/spring-guides/gs-messaging-stomp-websocket/). Spring Boot also provides a [guide on their website](https://spring.io/guides/gs/messaging-stomp-websocket/) which explains their project code in great detail.
 
@@ -10,7 +10,7 @@ We're going to be building off Spring Boot's "gs-messaging-stomp-websocket" [sam
 * [Modifying the POM](#pom)
 * [Server Configuration](#server)
 * [Code Changes](#code)
-* [Remaining Issues](#issues)
+* [Final Issues](#issues)
 
 ## <a name="start"></a>Getting Started
 
@@ -258,6 +258,8 @@ Traditionally, a Spring Boot application running on an embedded server such as T
 
 To make these changes, replace the original code in `Application.java` with the following:
 
+**`src/main/java/hello/Application.java`**
+
 ```
 package hello;
 
@@ -286,7 +288,66 @@ However, you'll also notice (especially if you ran the project first as a Spring
 
 ### WebSocket and WebJars Configuration
 
+According to [this StackOverflow answer](http://stackoverflow.com/a/32710851/634324), the aforementioned problems stem from the fact that Spring Boot automatically performs some key configuration when the application is run standalone, but this configuration needs to be done manually when deploying to an external server as a WAR. 
 
+In order to get all of your WebJars dependencies working properly, create a new class called `WebConfig` and add the following code:
 
-## <a name="issues"></a>Remaining Issues
+**`src/main/java/hello/WebConfig.java`**
+
+```
+package hello;
+
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+@Configuration
+@ComponentScan("hello")
+@Import({ WebSocketConfig.class })
+public class WebConfig extends WebMvcConfigurerAdapter {
+
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
+	}
+
+}
+```
+
+In the `addResourceHandlers` method, you're specifying a new resource handler which maps the URL pattern `/webjars/**` (which matches all nested directories and files inside the `/webjars` directory) to the corresponding location in the classpath. This way, the server will be able to find these WebJars dependencies when they're requested.
+
+Additionally, notice the `@ComponentScan` and `@Import` annotations. These tell Spring to look in the "hello" package and import the `WebSocketConfig` class, which was provided in the original project code. By doing this, when we register the `WebConfig` class to be processed in our application context (which we'll do in a second), Spring will automatically include the configuration in `WebSocketConfig` as well. 
+
+### DispatcherServlet Setup
+
+We're almost done with the code changes! The last step (as hinted above) is to tie our configuration files in with the application context. To do this, add the following code to `Application.java`:
+
+```
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.servlet.DispatcherServlet;
+
+import javax.servlet.ServletRegistration.Dynamic;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+
+...
+
+@Override
+public void onStartup(ServletContext servletContext) throws ServletException {
+	AnnotationConfigWebApplicationContext ctx = new AnnotationConfigWebApplicationContext();
+	ctx.register(WebConfig.class);
+	ctx.setServletContext(servletContext);
+	Dynamic dynamic = servletContext.addServlet("dispatcher", new DispatcherServlet(ctx));
+	dynamic.addMapping("/");
+	dynamic.setLoadOnStartup(1);
+	dynamic.setAsyncSupported(true);
+}
+```
+
+Here, we register our `WebConfig` class (which also includes our `WebSocketConfig` class) with the application context, and also add a new DispatcherServlet to the servlet context. The final line in the method (`dynamic.setAsyncSupported(true);`) is important because our WebSocket application requires support for asynchronous operations in order to run properly.
+
+## <a name="issues"></a>Final Issues
 

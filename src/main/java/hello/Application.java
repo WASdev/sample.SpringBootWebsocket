@@ -14,20 +14,20 @@ import javax.servlet.ServletException;
 @SpringBootApplication
 public class Application extends SpringBootServletInitializer {
 
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(Application.class);
-    }
-    
-    @Override
-    public void onStartup(ServletContext servletContext) throws ServletException {
-        AnnotationConfigWebApplicationContext ctx = new AnnotationConfigWebApplicationContext();  
-        ctx.register(WebConfig.class);
-        ctx.setServletContext(servletContext);
-        Dynamic dynamic = servletContext.addServlet("dispatcher", new DispatcherServlet(ctx));  
-        dynamic.addMapping("/");  
-        dynamic.setLoadOnStartup(1);
-        dynamic.setAsyncSupported(true);
-   }
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(Application.class);
+	}
+
+	@Override
+	public void onStartup(ServletContext servletContext) throws ServletException {
+		AnnotationConfigWebApplicationContext ctx = new AnnotationConfigWebApplicationContext();
+		ctx.register(WebConfig.class);
+		ctx.setServletContext(servletContext);
+		Dynamic dynamic = servletContext.addServlet("dispatcher", new DispatcherServlet(ctx));
+		dynamic.addMapping("/");
+		dynamic.setLoadOnStartup(1);
+		dynamic.setAsyncSupported(true);
+	}
 
 }
