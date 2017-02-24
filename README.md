@@ -1,8 +1,8 @@
 # Integrating a Spring Boot WebSocket Project with Liberty Using Maven
 
-This tutorial builds off the Spring Boot "gs-messaging-stomp-websocket" [sample project](https://github.com/spring-guides/gs-messaging-stomp-websocket/) and configures that project into an runnable Liberty JAR. Spring Boot also provides a [guide on their website](https://spring.io/guides/gs/messaging-stomp-websocket/) which explains how their sample project works. 
+This tutorial demonstrates the entire process of modifying a sample Spring Boot WebSocket project to run as a packaged Liberty assembly. The end result is a standalone runnable JAR which contains the Websocket application deployed on a Liberty server.
 
-This tutorial demonstrates the entire process of modifying the sample WebSocket project to run as a packaged Liberty assembly. The end result is a standalone runnable JAR which contains the Websocket application deployed on the Liberty server. 
+We're going to be building off Spring Boot's "gs-messaging-stomp-websocket" [sample project](https://github.com/spring-guides/gs-messaging-stomp-websocket/). Spring Boot also provides a [guide on their website](https://spring.io/guides/gs/messaging-stomp-websocket/) which explains their project code in great detail.
 
 ### Table of Contents
 
@@ -207,15 +207,45 @@ We'll need to add several new plugins to configure our WebSocket application to 
 
 The following is a list of each plugin that we added, along with some comments:
 
-* [maven-compiler-plugin](https://maven.apache.org/plugins/maven-compiler-plugin/): Unlike the `war` packaging type, the `liberty-assembly` packaging type by default does not compile the source, as it is meant to package existing Maven artifacts. Thus, we have to specify this manually. 
+* [maven-compiler-plugin](https://maven.apache.org/plugins/maven-compiler-plugin/): Unlike the `war` packaging type, the `liberty-assembly` packaging type does not compile the source by default, as it is meant to package existing Maven artifacts. Thus, we have to specify this manually. 
 * [maven-war-plugin](https://maven.apache.org/plugins/maven-war-plugin/): Packages the source into a WAR. 
-* [liberty-maven-plugin](https://github.com/WASdev/ci.maven#liberty-maven-plugin): Provides configuration for Liberty server and applications. Here, we create a server called "websocketServer" and use set `packageFile` parameter to the desired file name and location of our packaged server. As per our `package-server` [guidelines](https://github.com/WASdev/ci.maven/blob/master/docs/package-server.md), we add `<include>runnable</include>` to the configuration to indicate that we want to package the server into a runnable JAR. Notice also that in our `install-apps` execution goal, we set the `<appsDirectory>apps</appsDirectory>` to indicate that we want our application to be installed in the `apps` directory of the server rather than the default `dropins` directory. This parameter is optional. 
+* [liberty-maven-plugin](https://github.com/WASdev/ci.maven#liberty-maven-plugin): Provides configuration for our Liberty server and application. Here, we create a server called "websocketServer" and use set the `packageFile` parameter to the desired file name and location of our packaged server. As per our `package-server` goal [guidelines](https://github.com/WASdev/ci.maven/blob/master/docs/package-server.md), we add `<include>runnable</include>` to the configuration to indicate that we want to package the server into a runnable JAR. Notice also that in our `install-apps` execution goal, we set `<appsDirectory>apps</appsDirectory>` to indicate that we want our application to be installed in the `apps` directory of the server rather than the default `dropins` directory. Note that this is an optional modification. 
 * [maven-dependency-plugin](https://maven.apache.org/plugins/maven-dependency-plugin/): Copies application dependencies to the server.
 * [maven-resources-plugin](https://maven.apache.org/plugins/maven-resources-plugin/): Copies application resources to the server.
 
 ## <a name="server"></a>Server Configuration
 
+After modifying our POM, the next step is to create a `server.xml` file and add our server configuration. By default, this file should be located at `src/test/resources/server.xml`, although you can modify this under by changing the `configFile` configuration in the `liberty-maven-plugin` (we provide this code our example above, although it is commented out because we're using the default location for this sample project). 
 
+Create the file and add the following code:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="new server">
+	<application context-root="/"
+		location="gs-messaging-stomp-websocket-0.1.0.war"></application>
+
+	<!-- Enable features -->
+	<featureManager>
+		<feature>servlet-3.1</feature>
+	</featureManager>
+
+	<!-- To access this server from a remote client add a host attribute to 
+		the following element, e.g. host="*" -->
+	<httpEndpoint id="defaultHttpEndpoint" httpPort="9080"
+		httpsPort="9443" />
+
+	<!-- Automatically expand WAR files and EAR files -->
+	<applicationManager autoExpand="true" />
+
+</server>
+```
+
+There are a few notable things happening in this configuration:
+
+* We set the context root of our application to the server root. This is done in order to maintain consistency with the file paths specified in the sample project, as Spring Boot applications running on embedded servers are located at the server root. 
+* In our `featureManager`, we add the `servlet-3.1` feature as the application will be running as a servlet.
+* We set `<applicationManager autoExpand="true" />` to automatically expand our WAR file. Note if you have the WDT (WebSphere Development Tools) plugin installed in Eclipse, you might see an error on this line. You can ignore this, as it will go away when `server.xml` is copied to the server.
 
 ## <a name="code"></a>Code Changes
 
