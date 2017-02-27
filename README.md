@@ -209,7 +209,7 @@ The following is a list of each plugin that we added, along with some comments:
 
 * [maven-compiler-plugin](https://maven.apache.org/plugins/maven-compiler-plugin/): Unlike the `war` packaging type, the `liberty-assembly` packaging type does not compile the source by default, as it is meant to package existing Maven artifacts. Thus, we have to specify this manually. 
 * [maven-war-plugin](https://maven.apache.org/plugins/maven-war-plugin/): Packages the source into a WAR. 
-* [liberty-maven-plugin](https://github.com/WASdev/ci.maven#liberty-maven-plugin): Provides configuration for our Liberty server and application. Here, we create a server called "websocketServer" and use set the `packageFile` parameter to the desired file name and location of our packaged server. As per our `package-server` goal [guidelines](https://github.com/WASdev/ci.maven/blob/master/docs/package-server.md), we add `<include>runnable</include>` to the configuration to indicate that we want to package the server into a runnable JAR. Notice also that in our `install-apps` execution goal, we set `<appsDirectory>apps</appsDirectory>` to indicate that we want our application to be installed in the `apps` directory of the server rather than the default `dropins` directory. Note that this is an optional modification. 
+* [liberty-maven-plugin](https://github.com/WASdev/ci.maven#liberty-maven-plugin): Provides configuration for our Liberty server and application. Here, we create a server called "websocketServer" and set the `packageFile` parameter to the desired file name and location of our packaged server. As per our `package-server` goal [guidelines](https://github.com/WASdev/ci.maven/blob/master/docs/package-server.md), we add `<include>runnable</include>` to the configuration to indicate that we want to package the server into a runnable JAR. Notice also that in our `install-apps` execution goal, we set `<appsDirectory>apps</appsDirectory>` to indicate that we want our application to be installed in the `apps` directory of the server rather than the default `dropins` directory. Note that this is an optional modification. 
 * [maven-dependency-plugin](https://maven.apache.org/plugins/maven-dependency-plugin/): Copies application dependencies to the server.
 * [maven-resources-plugin](https://maven.apache.org/plugins/maven-resources-plugin/): Copies application resources to the server.
 
@@ -245,7 +245,7 @@ There are a few notable things happening in this configuration:
 
 * We set the context root of our application to the server root. This is done in order to maintain consistency with the file paths specified in the sample project, as Spring Boot applications running on embedded servers are located at the server root. 
 * In our `featureManager`, we add the `servlet-3.1` Liberty feature as the application will be running as a servlet.
-* We set `<applicationManager autoExpand="true" />` to automatically expand our WAR file. Note if you have the WDT (WebSphere Development Tools) plugin installed in Eclipse, you might see an error on this line. You can ignore this, as it will go away when `server.xml` is copied to the server.
+* We set `<applicationManager autoExpand="true" />` to automatically expand our WAR file. Note if you have the WDT (WebSphere Development Tools) plugin installed in Eclipse, you might see an error on this line. You can ignore this, as it will be resolved when `server.xml` is copied to the server.
 
 ## <a name="code"></a>Code Changes
 
@@ -255,7 +255,7 @@ We're now ready to make changes to our source code. This section is broken up by
 
 We previously briefly mentioned the importance of setting the `<start-class>` parameter in the POM properties. The importance of this is evident now, as we're about to change how our WebSocket application is launched. 
 
-Traditionally, a Spring Boot application running on an embedded server such as Tomcat simply calls `SpringApplication.run(...)` in its main class (in this case `hello.Application`). However, we must change this when deploying our application as a servlet to our Liberty server. Specifically, we're going to have our start class extend `SpringBootServletInitializer` in order to run our application as a WAR. Then, by setting this class as our `<start-class>` parameter, we specify (quite clearly) that our application starts its execution from this class. 
+Traditionally, a Spring Boot application running on an embedded server such as Tomcat simply calls `SpringApplication.run(...)` in its main class (in this case `hello.Application`). However, we must change this when deploying our application as a servlet to our Liberty server. Specifically, we're going to have our start class extend `SpringBootServletInitializer` in order to run our application as a WAR. Then, by setting this class as our `<start-class>` parameter, we specify that our application starts its execution from this class. 
 
 To make these changes, replace the original code in `Application.java` with the following:
 
@@ -323,7 +323,7 @@ Additionally, notice the `@ComponentScan` and `@Import` annotations. These tell 
 
 ### DispatcherServlet Setup
 
-We're almost done with the code changes! The last step (as hinted above) is to tie our configuration files in with the application context. To do this, add the following code to `Application.java`:
+We're almost done with the code changes! The last step (as hinted above) is to tie our configuration files in with the application context. To do this, add the following code to your `Application` class:
 
 ```
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
@@ -348,7 +348,7 @@ public void onStartup(ServletContext servletContext) throws ServletException {
 }
 ```
 
-Here, we register our `WebConfig` class (which also includes our `WebSocketConfig` class) with the application context, and also add a new DispatcherServlet to the servlet context. The final line in the method (`dynamic.setAsyncSupported(true);`) is important because our WebSocket application requires support for asynchronous operations in order to run properly.
+Here, we register our `WebConfig` class (which also includes our `WebSocketConfig` class) with the application context, and also add a new `DispatcherServlet` to the servlet context. The final line in the method (`dynamic.setAsyncSupported(true);`) is important because our WebSocket application requires support for asynchronous operations in order to run properly.
 
 ## <a name="issues"></a>Final Issues
 
@@ -356,7 +356,7 @@ There are just a few small changes we have to make before our WebSocket applicat
 
 ### WebJars Locator
 
-Due to a [known issue](https://github.com/webjars/webjars-locator/issues/78) with the `webjars-locator` dependency and its compatibility with WebSphere (both traditional and Liberty), it doesn't work properly without some modifications (which are propesed in the linked issue). At the moment, we do not provide a modified version of this artifact which is WebSphere compatible; you'll have to modify the dependency URLs in `/src/main/resources/static/index.html` to include the version numbers of the dependencies or else they won't be found by the resource handler.
+Due to a [known issue](https://github.com/webjars/webjars-locator/issues/78) with the `webjars-locator` dependency and its compatibility with WebSphere (both traditional and Liberty), it doesn't work properly without some modifications (which are proposed in the linked issue). At the moment, we do not provide a modified version of this artifact which is WebSphere compatible; you'll have to modify the dependency URLs in `/src/main/resources/static/index.html` to include the version numbers of the dependencies or else they won't be found by the resource handler.
 
 For example, you'll need to change `/webjars/bootstrap/css/bootstrap.min.css` to `/webjars/bootstrap/3.3.7/css/bootstrap.min.css` and so on. The version numbers of each dependency are listed in `pom.xml`. 
 
