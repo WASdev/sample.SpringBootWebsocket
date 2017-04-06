@@ -15,7 +15,7 @@ We're going to be building off Spring Boot's "gs-messaging-stomp-websocket" [sam
 
 ## <a name="start"></a>Getting Started
 
-Start by downloading/cloning the code from Spring's "gs-messaging-stomp-websocket" [sample project](https://github.com/spring-guides/gs-messaging-stomp-websocket/). All the proceeding modifications will be made on the code in the ["complete" folder](https://github.com/spring-guides/gs-messaging-stomp-websocket/tree/master/complete) of that project. Thus, we suggest familiarizing yourself with that code and reading the guide before proceeding.
+Start by downloading/cloning the code from Spring's "gs-messaging-stomp-websocket" [sample project](https://github.com/spring-guides/gs-messaging-stomp-websocket/). All the following modifications will be made on the code in the ["complete" folder](https://github.com/spring-guides/gs-messaging-stomp-websocket/tree/master/complete) of that project. Thus, we suggest familiarizing yourself with that code and reading the guide before proceeding.
 
 ## <a name="pom"></a>Modifying the POM
 
@@ -215,7 +215,7 @@ The following is a list of each plugin that we added, along with some comments:
 
 ## <a name="server"></a>Server Configuration
 
-After modifying our POM, the next step is to create a `server.xml` file and add our server configuration. By default, this file should be located at `src/test/resources/server.xml`, although you can modify this by changing the `configFile` configuration parameter in the `liberty-maven-plugin` (we provide this code our example above, although it is commented out because we're using the default location for this sample project). 
+After modifying our POM, the next step is to create a `server.xml` file and add our server configuration. By default, this file should be located at `src/test/resources/server.xml`, although you can modify this by changing the `configFile` configuration parameter in the `liberty-maven-plugin` (we provide this code in our example above, although it is commented out because we're using the default location for this sample project). 
 
 Once you have created your `server.xml`, add the following code:
 
