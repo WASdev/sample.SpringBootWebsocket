@@ -1,4 +1,4 @@
-# Integrating a Spring Boot WebSocket Project with Liberty Using Maven
+# Running a Spring Boot WebSocket Application on Liberty Using Maven
 
 This tutorial demonstrates the entire process of modifying a sample Spring Boot WebSocket project to run as a packaged Liberty assembly. The end result is a standalone runnable JAR which contains the WebSocket application deployed on a Liberty server.
 
@@ -33,28 +33,126 @@ From our [Liberty Maven Plugin](https://github.com/WASdev/ci.maven) documentatio
 
 > The `liberty-assembly` Maven packaging type is used to create a packaged Liberty profile server Maven artifact out of existing server installation, compressed archive, or another server Maven artifact. Any applications specified as Maven compile dependencies will be automatically packaged with the assembled server. Liberty features can also be installed and packaged with the assembled server.
 
+### Update Project Name
+
+Optionally, we also change the name of the Maven project to `websocketApp`:
+
+```
+<name>websocketApp</name>
+```
+
+### Add Sonatype Repository
+
+In order to use version `2.0-SNAPSHOT` of the `liberty-maven-plugin` (as described below), we'll need to add the Sonatype repository to our project:
+
+```
+<pluginRepositories>
+	<!-- Configure Sonatype OSS Maven snapshots repository -->
+	<pluginRepository>
+		<id>sonatype-nexus-snapshots</id>
+		<name>Sonatype Nexus Snapshots</name>
+		<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		<snapshots>
+			<enabled>true</enabled>
+		</snapshots>
+		<releases>
+			<enabled>false</enabled>
+		</releases>
+	</pluginRepository>
+</pluginRepositories>
+```
+
 ### Add Liberty Dependencies
 
 For this sample project, we'll be using Liberty (version 16.0.0.4) with Java EE 7 Web Profile. Add the following dependencies to get this Liberty runtime:
 
 ```
-<dependencies>
+<dependency>
+	<groupId>com.ibm.websphere.appserver.runtime</groupId>
+	<artifactId>wlp-webProfile7</artifactId>
+	<version>16.0.0.4</version>
+	<type>zip</type>
+</dependency>
+
+<dependency>
+	<groupId>net.wasdev.maven.tools.targets</groupId>
+	<artifactId>liberty-target</artifactId>
+	<version>16.0.0.4</version>
+	<type>pom</type>
+	<scope>provided</scope>
+	<exclusions>
+		<exclusion>
+			<groupId>javax.security.auth.message</groupId>
+			<artifactId>javax.security.auth.message-api</artifactId>
+		</exclusion>
+	</exclusions>
+</dependency>
+```
+
+### Modify Spring Boot Dependencies
+
+We'll also need to make a modification to the `org.springframework.boot.spring-boot-starter-websocket` dependency. Specifically, we exclude `spring-boot-starter-tomcat` from this dependency as we are running the application on Liberty:
+
+```
+<exclusions>
+	<exclusion>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-tomcat</artifactId>
+	</exclusion>
+</exclusions>
+```
+
+Note: according to our logs, the Liberty implementation of websocket will not be used if you don't add the exclusion above. 
+
+### Add Arquillian Dependencies
+
+We'll be using [Arquillian](http://arquillian.org/) to run our integration tests, instead of the default Spring Boot testing framework. This is because in migrating to Liberty, we also want to run our test cases on our Liberty server, rather than using a Spring Boot embedded server. To do this, we'll be using the `arquillian-wlp-managed` container and providing the appropriate configuration in the next section.
+
+To add Arquillian to our project, first add `arquillian-bom` under the `dependencyManagement` section of the POM:
+
+```
+<dependencyManagement>
 	...
-   	<dependency>
-   		<groupId>com.ibm.websphere.appserver.runtime</groupId>
-   		<artifactId>wlp-webProfile7</artifactId>
-   		<version>16.0.0.4</version>
-   		<type>zip</type>
-   	</dependency>
-   	<dependency>
-   		<groupId>net.wasdev.maven.tools.targets</groupId>
-   		<artifactId>liberty-target</artifactId>
-   		<version>16.0.0.4</version>
-   		<type>pom</type>
-   		<scope>provided</scope>
-    </dependency>
+	<dependencies>
+		<dependency>
+			<groupId>org.jboss.arquillian</groupId>
+			<artifactId>arquillian-bom</artifactId>
+			<version>1.1.13.Final</version>
+			<scope>import</scope>
+			<type>pom</type>
+		</dependency>
+	</dependencies>
     ...
-</dependencies>
+</dependencyManagement>
+```
+
+Next, add the following dependencies:
+
+```
+<dependency>
+	<groupId>junit</groupId>
+	<artifactId>junit</artifactId>
+	<scope>test</scope>
+</dependency>
+
+<dependency>
+	<groupId>org.jboss.arquillian.container</groupId>
+	<artifactId>arquillian-wlp-managed-8.5</artifactId>
+	<version>1.0.0.Beta2</version>
+	<scope>test</scope>
+</dependency>
+
+<dependency>
+	<groupId>org.jboss.shrinkwrap.resolver</groupId>
+	<artifactId>shrinkwrap-resolver-impl-maven</artifactId>
+	<scope>test</scope>
+</dependency>
+
+<dependency>
+	<groupId>org.jboss.arquillian.junit</groupId>
+	<artifactId>arquillian-junit-container</artifactId>
+	<scope>test</scope>
+</dependency>
 ```
 
 ### Add POM Properties
@@ -73,145 +171,73 @@ Add the following properties to the POM properties list:
 </properties>
 ```
 
-Perhaps most importantly, note the addition of the `<start-class>` property. We'll discuss this is greater detail in the [Code Changes](#code) section.
+Note the addition of the `<start-class>` property. We'll discuss this is greater detail in the [Code Changes](#code) section.
 
-### Add Plugins
+### Add the `liberty-maven-plugin`
 
-We'll need to add several new plugins to configure our WebSocket application to run properly on Liberty:
+Recall that we added the Sonatype repository to our POM previously, in order to use the `2.0-SNAPSHOT` version of the `liberty-maven-plugin`. We will now add the plugin and configure it:
 
 ```
-<plugins>
-	...
-	<plugin>
-		<artifactId>maven-compiler-plugin</artifactId>
-		<executions>
-			<execution>
-				<id>default-compile</id>
-				<phase>compile</phase>
-				<goals>
-					<goal>compile</goal>
-				</goals>
-			</execution>
-			<execution>
-				<id>default-testCompile</id>
-				<phase>test-compile</phase>
-				<goals>
-					<goal>testCompile</goal>
-				</goals>
-			</execution>
-		</executions>
-	</plugin>
-	<plugin>
-		<groupId>org.apache.maven.plugins</groupId>
-		<artifactId>maven-war-plugin</artifactId>
-		<configuration>
-			<failOnMissingWebXml>false</failOnMissingWebXml>
-			<packagingExcludes>pom.xml</packagingExcludes>
-		</configuration>
-		<executions>
-			<execution>
-				<id>war</id>
-				<phase>prepare-package</phase>
-				<goals>
-					<goal>war</goal>
-				</goals>
-			</execution>
-		</executions>
-	</plugin>
-	<plugin>
-		<groupId>net.wasdev.wlp.maven.plugins</groupId>
-		<artifactId>liberty-maven-plugin</artifactId>
-		<version>1.3-SNAPSHOT</version>
-		<extensions>true</extensions>
-		<!-- Specify configuration, executions for liberty-maven-plugin -->
-		<configuration>
-			<serverName>websocketServer</serverName>
-			<assemblyArtifact>
-				<groupId>com.ibm.websphere.appserver.runtime</groupId>
-				<artifactId>wlp-webProfile7</artifactId>
-				<version>16.0.0.4</version>
-				<type>zip</type>
-			</assemblyArtifact>
-			<assemblyInstallDirectory>${project.build.directory}</assemblyInstallDirectory>
-			<!-- <configFile>src/main/liberty/config/server.xml</configFile> -->
-			<packageFile>${project.build.directory}/WebsocketServerPackage.jar</packageFile>
-			<bootstrapProperties>
-				<default.http.port>9080</default.http.port>
-				<default.https.port>9443</default.https.port>
-			</bootstrapProperties>
-			<features>
-				<acceptLicense>true</acceptLicense>
-			</features>
-			<include>runnable</include>
-		</configuration>
-		<executions>
-			<execution>
-				<id>install-apps</id>
-				<phase>prepare-package</phase>
-				<goals>
-					<goal>install-apps</goal>
-				</goals>
-				<configuration>
-					<appsDirectory>apps</appsDirectory>
-					<stripVersion>true</stripVersion>
-					<installAppPackages>project</installAppPackages>
-				</configuration>
-			</execution>
-		</executions>
-	</plugin>
-	<plugin>
-		<groupId>org.apache.maven.plugins</groupId>
-		<artifactId>maven-dependency-plugin</artifactId>
-		<executions>
-			<execution>
-				<id>copy-server-files</id>
-				<phase>package</phase>
-				<goals>
-					<goal>copy-dependencies</goal>
-				</goals>
-				<configuration>
-					<includeArtifactIds>server-snippet</includeArtifactIds>
-					<prependGroupId>true</prependGroupId>
-					<outputDirectory>${project.build.directory}/wlp/usr/servers/${wlpServerName}/configDropins/defaults</outputDirectory>
-				</configuration>
-			</execution>
-		</executions>
-	</plugin>
-	<plugin>
-		<groupId>org.apache.maven.plugins</groupId>
-		<artifactId>maven-resources-plugin</artifactId>
-		<executions>
-			<execution>
-				<id>copy-app</id>
-				<phase>package</phase>
-				<goals>
-					<goal>copy-resources</goal>
-				</goals>
-				<configuration>
-					<outputDirectory>${project.build.directory}/wlp/usr/servers/${wlpServerName}/apps</outputDirectory>
-					<resources>
-						<resource>
-							<directory>${project.build.directory}</directory>
-							<includes>
-								<include>${project.artifactId}-${project.version}.war</include>
-							</includes>
-						</resource>
-					</resources>
-				</configuration>
-			</execution>
-		</executions>
-	</plugin>
-	...
-</plugins>
+<plugin>
+	<groupId>net.wasdev.wlp.maven.plugins</groupId>
+	<artifactId>liberty-maven-plugin</artifactId>
+	<version>2.0-SNAPSHOT</version>
+	<extensions>true</extensions>
+	<!-- Specify configuration, executions for liberty-maven-plugin -->
+	<configuration>
+		<serverName>websocketServer</serverName>
+		<assemblyArtifact>
+			<groupId>com.ibm.websphere.appserver.runtime</groupId>
+			<artifactId>wlp-webProfile7</artifactId>
+			<version>16.0.0.4</version>
+			<type>zip</type>
+		</assemblyArtifact>
+		<assemblyInstallDirectory>${project.build.directory}</assemblyInstallDirectory>
+		<!-- <configFile>src/main/liberty/config/server.xml</configFile> -->
+		<packageFile>${project.build.directory}/WebsocketServerPackage.jar</packageFile>
+		<bootstrapProperties>
+			<default.http.port>9080</default.http.port>
+			<default.https.port>9443</default.https.port>
+		</bootstrapProperties>
+		<features>
+			<acceptLicense>true</acceptLicense>
+		</features>
+		<include>runnable</include>
+		<installAppPackages>all</installAppPackages>
+		<appsDirectory>apps</appsDirectory>
+		<stripVersion>true</stripVersion>
+		<looseApplication>true</looseApplication>
+	</configuration>
+	<executions>
+		<execution>
+			<id>default-start-server</id>
+			<phase>pre-integration-test</phase>
+			<goals>
+				<goal>start-server</goal>
+			</goals>
+			<configuration>
+				<skip>true</skip>
+			</configuration>
+		</execution>
+		<execution>
+			<id>default-stop-server</id>
+			<phase>post-integration-test</phase>
+			<goals>
+				<goal>stop-server</goal>
+			</goals>
+			<configuration>
+				<skip>true</skip>
+			</configuration>
+		</execution>
+	</executions>
+</plugin>
 ```
 
-The following is a list of each plugin that we added, along with some comments:
+Here, we create a server called "websocketServer" and set the `packageFile` parameter to the desired file name and location of our packaged server. As per our `package-server` goal [guidelines](https://github.com/WASdev/ci.maven/blob/master/docs/package-server.md), we add `<include>runnable</include>` to the configuration to indicate that we want to package the server into a runnable JAR. Notice also that in our `install-apps` execution goal, we set `<appsDirectory>apps</appsDirectory>` to indicate that we want our application to be installed in the `apps` directory of the server rather than the default `dropins` directory. Note that this is an optional modification. 
 
-* [maven-compiler-plugin](https://maven.apache.org/plugins/maven-compiler-plugin/): Unlike the `war` packaging type, the `liberty-assembly` packaging type does not compile the source by default, as it is meant to package existing Maven artifacts. Thus, we have to specify this manually. 
-* [maven-war-plugin](https://maven.apache.org/plugins/maven-war-plugin/): Packages the source into a WAR. 
-* [liberty-maven-plugin](https://github.com/WASdev/ci.maven#liberty-maven-plugin): Provides configuration for our Liberty server and application. Here, we create a server called "websocketServer" and set the `packageFile` parameter to the desired file name and location of our packaged server. As per our `package-server` goal [guidelines](https://github.com/WASdev/ci.maven/blob/master/docs/package-server.md), we add `<include>runnable</include>` to the configuration to indicate that we want to package the server into a runnable JAR. Notice also that in our `install-apps` execution goal, we set `<appsDirectory>apps</appsDirectory>` to indicate that we want our application to be installed in the `apps` directory of the server rather than the default `dropins` directory. Note that this is an optional modification. 
-* [maven-dependency-plugin](https://maven.apache.org/plugins/maven-dependency-plugin/): Copies application dependencies to the server.
-* [maven-resources-plugin](https://maven.apache.org/plugins/maven-resources-plugin/): Copies application resources to the server.
+Furthermore, note that we have added two executions to the plugin. These executions skips the `start-server` and `stop-server` goals which are, by default, run in the `pre-integration-test` and `post-integration-test` build phases respectively. We need to remove these goals as the Arquillian container for Liberty expects that the server be created, but not running, when the integration tests are ran. 
+
+As an aside, we can also remove the `spring-boot-maven-plugin` which was included by default in the POM. The `liberty-maven-plugin` is the only plugin you will need for this project.
 
 ## <a name="server"></a>Server Configuration
 
@@ -223,11 +249,13 @@ Once you have created your `server.xml`, add the following code:
 <?xml version="1.0" encoding="UTF-8"?>
 <server description="new server">
 	<application context-root="/"
-		location="gs-messaging-stomp-websocket-0.1.0.war"></application>
+		location="gs-messaging-stomp-websocket.war"></application>
 
 	<!-- Enable features -->
 	<featureManager>
-		<feature>servlet-3.1</feature>
+		<feature>jsp-2.3</feature>
+		<feature>websocket-1.1</feature>
+		<feature>localConnector-1.0</feature>
 	</featureManager>
 
 	<!-- To access this server from a remote client add a host attribute to 
@@ -238,14 +266,42 @@ Once you have created your `server.xml`, add the following code:
 	<!-- Automatically expand WAR files and EAR files -->
 	<applicationManager autoExpand="true" />
 
+	<!-- Automatically load the Spring application endpoint once the server 
+		is ready. -->
+	<webContainer deferServletLoad="false" />
+
 </server>
 ```
 
 There are a few notable things happening in this configuration:
 
 * We set the context root of our application to the server root. This is done in order to maintain consistency with the file paths specified in the sample project, as Spring Boot applications running on embedded servers are located at the server root. 
-* In our `featureManager`, we add the `servlet-3.1` Liberty feature as the application will be running as a servlet.
-* We set `<applicationManager autoExpand="true" />` to automatically expand our WAR file. Note if you have the WDT (WebSphere Development Tools) plugin installed in Eclipse, you might see an error on this line. You can ignore this, as it will be resolved when `server.xml` is copied to the server.
+* In our `featureManager`, we add the `jsp-2.3` and `localConnector-1.0` features which are required for Arquillian. Note that `jsp-2.3` includes `servlet-3.1`. We also add the `websocket-1.1` feature because we want to use Liberty's WebSocket implementation in our project. 
+* We set `<applicationManager autoExpand="true" />` to automatically expand our WAR file. If you have the WDT (WebSphere Development Tools) plugin installed in Eclipse, you might see an error on this line. You can ignore this, as it will be resolved when `server.xml` is copied to the server.
+* We set `<webContainer deferServletLoad="false" />` to automatically load the Spring Boot application once the server is ready. 
+
+We also have to add the appropriate Arquillian configuration for our integration test to run properly. Create a file named `arquillian.xml` in `src/test/resources` and add the following:
+
+```
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://jboss.org/schema/arquillian"
+	xsi:schemaLocation="http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+	<engine>
+		<property name="deploymentExportPath">target/</property>
+	</engine>
+	<container qualifier="websphere" default="true">
+		<configuration>
+			<property name="wlpHome">C:\Users\IBM_ADMIN\websphere-test\websocket-liberty\target\wlp</property>
+			<property name="serverName">websocketServer</property>
+			<property name="httpPort">9080</property>
+			<property name="outputToConsole">true</property>
+		</configuration>
+	</container>
+</arquillian>
+```
+
+You may have to change the value of the `wlpHome` property to the appropriate directory where your server was installed. You can read [this article](https://developer.ibm.com/wasdev/docs/getting-started-liberty-arquillian/) for some more information and another example of using Arquillian with Liberty. 
 
 ## <a name="code"></a>Code Changes
 
@@ -283,7 +339,7 @@ public class Application extends SpringBootServletInitializer {
 
 If you've made it this far, you should done everything you need to successfully start your WebSocket application on a Liberty server. Take a minute to check whether you're on track. 
 
-Start the application (by running `mvn install liberty:run-server`) and access its context root (`http://localhost:9080/`). You should see the static `index.html` page being displayed. This is good news; it means the server started up and has successfully loaded your application source.
+Start the application (by running `mvn install liberty:run-server -DskipTests=true`) and access its context root at `http://localhost:9080/` (we skip tests because we're not done configuring them yet). You should see the static `index.html` page being displayed. This is good news; it means the server started up and has successfully loaded your application source.
  
 However, you'll also notice (especially if you ran the project first as a Spring Boot standalone application) that the styling for the page is not correct. Additionally, the web socket is not actually functional, as the interface is not responsive. This is because there are some more changes you'll have to make for application to run properly when deployed as a WAR. 
 
@@ -323,7 +379,7 @@ Additionally, notice the `@ComponentScan` and `@Import` annotations. These tell 
 
 ### DispatcherServlet Setup
 
-We're almost done with the code changes! The last step (as hinted above) is to tie our configuration files in with the application context. To do this, add the following code to your `Application` class:
+We now need to tie our configuration files in with the application context. To do this, add the following code to your `Application` class:
 
 ```
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
@@ -349,6 +405,50 @@ public void onStartup(ServletContext servletContext) throws ServletException {
 ```
 
 Here, we register our `WebConfig` class (which also includes our `WebSocketConfig` class) with the application context, and also add a new `DispatcherServlet` to the servlet context. The final line in the method (`dynamic.setAsyncSupported(true);`) is important because our WebSocket application requires support for asynchronous operations in order to run properly.
+
+### Integration Test Changes
+
+We're almost done! The final step is to modify our integration test to run properly on Arquillian. 
+
+First, we'll need to rename the test class name to end in `TestIT`, to indicate that we're running an integration test. Specifically, we changed the class name from `GreetingIntegrationTests` to `GreetingIntegrationTestIT`. 
+
+Next, change the `@RunWith(SpringRunner.class)` annotation to `@RunWith(Arquillian.class)` to indicate that we want to use Arquillian to run the test case. 
+
+We'll also be using the static server port defined in our POM (9080) instead of using a randomly generated port, as Spring Boot does. As such, remove the `@SpringBootTest` annotation, the `@LocalServerPort` annotation and `port` variable declaration at the beginning of the class. Also, since we're not using the `port` variable anymore, change this line (line 94 in the original code):
+
+```
+this.stompClient.connect("ws://localhost:{port}/gs-guide-websocket", this.headers, handler, this.port);
+``` 
+
+to this:
+
+```
+this.stompClient.connect("ws://localhost:9080/gs-guide-websocket", this.headers, handler);
+```
+
+As specified in Arquillian's [Getting Started Guide](http://arquillian.org/guides/getting_started/#write_an_arquillian_test), we'll also need to add a public static method with the `@Deployment` annotation, which returns a ShrinkWrap archive. This archive contains the test case, as well as any dependencies the test case needs to run. It is deployed and runs on the server alongside the application during the testing process. 
+
+We create this archive in the following manner:
+
+```
+@Deployment
+public static WebArchive createDeployment() {
+
+	// Import Maven runtime dependencies
+	File[] mavenFiles = Maven.resolver().loadPomFromFile("pom.xml").importRuntimeDependencies().resolve()
+			.withTransitivity().asFile();
+
+	// Create deploy file
+	WebArchive war = ShrinkWrap.create(WebArchive.class).addPackage("hello").addAsLibraries(mavenFiles);
+
+	// Show the deploy structure
+	System.out.println(war.toString(true));
+
+	return war;
+}
+```
+
+The archive includes all the runtime dependencies from our POM, as well as all our of source classes, which are referenced from the test case code.
 
 ## <a name="issues"></a>Final Issues
 

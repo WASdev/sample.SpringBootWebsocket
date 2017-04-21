@@ -11,10 +11,10 @@
 	</featureManager>
 
 	<!-- Logging to verify that we are using Liberty's websocket implementation -->
-	<logging
+	<!-- <logging
 		traceSpecification="com.ibm.websphere.javaee.websocket.*=all:com.ibm.ws.wsoc.*=all:com.ibm.websphere.wsoc.*=all:com.ibm.websphere.appserver.api.wsoc.*=all:com.ibm.websphere.appserver.websocket.*=all:javax.websocket.*=all"
 		traceFileName="trace.log" maxFileSize="1000" maxFiles="10"
-		traceFormat="BASIC" />
+		traceFormat="BASIC" /> -->
 
 	<!-- To access this server from a remote client add a host attribute to 
 		the following element, e.g. host="*" -->

@@ -107,7 +107,7 @@ public class GreetingIntegrationTestIT {
 
 		this.stompClient.connect("ws://localhost:9080/gs-guide-websocket", this.headers, handler);
 
-		if (latch.await(10, TimeUnit.SECONDS)) {
+		if (latch.await(3, TimeUnit.SECONDS)) {
 			if (failure.get() != null) {
 				throw new AssertionError("", failure.get());
 			}
