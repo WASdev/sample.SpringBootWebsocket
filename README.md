@@ -235,7 +235,7 @@ Recall that we added the Sonatype repository to our POM previously, in order to 
 
 Here, we create a server called "websocketServer" and set the `packageFile` parameter to the desired file name and location of our packaged server. As per our `package-server` goal [guidelines](https://github.com/WASdev/ci.maven/blob/master/docs/package-server.md), we add `<include>runnable</include>` to the configuration to indicate that we want to package the server into a runnable JAR. Notice also that in our `install-apps` execution goal, we set `<appsDirectory>apps</appsDirectory>` to indicate that we want our application to be installed in the `apps` directory of the server rather than the default `dropins` directory. Note that this is an optional modification. 
 
-Furthermore, note that we have added two executions to the plugin. These executions skips the `start-server` and `stop-server` goals which are, by default, run in the `pre-integration-test` and `post-integration-test` build phases respectively. We need to remove these goals as the Arquillian container for Liberty expects that the server be created, but not running, when the integration tests are ran. 
+Furthermore, note that we have added two executions to the plugin. These executions skips the `start-server` and `stop-server` goals which, by default, run in the `pre-integration-test` and `post-integration-test` build phases respectively. We need to remove these goals as the Arquillian container for Liberty expects that the server be created, but not running, when the integration tests are ran. 
 
 As an aside, we can also remove the `spring-boot-maven-plugin` which was included by default in the POM. The `liberty-maven-plugin` is the only plugin you will need for this project.
 
