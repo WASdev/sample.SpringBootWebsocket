@@ -15,7 +15,7 @@ We're going to be building off Spring Boot's "gs-messaging-stomp-websocket" [sam
 
 ## <a name="start"></a>Getting Started
 
-Start by downloading/cloning the code from Spring's "gs-messaging-stomp-websocket" [sample project](https://github.com/spring-guides/gs-messaging-stomp-websocket/). All the following modifications will be made on the code in the ["complete" folder](https://github.com/spring-guides/gs-messaging-stomp-websocket/tree/master/complete) of that project. Thus, we suggest familiarizing yourself with that code and reading the guide before proceeding.
+Start by downloading/cloning the code from Spring's "gs-messaging-stomp-websocket" [sample project](https://github.com/spring-guides/gs-messaging-stomp-websocket/). All the modifications in this guide will be made on the code in the ["complete" folder](https://github.com/spring-guides/gs-messaging-stomp-websocket/tree/master/complete) of that project. Thus, we suggest familiarizing yourself with that code and reading the guide before proceeding.
 
 ## <a name="pom"></a>Modifying the POM
 
@@ -29,9 +29,9 @@ First, set the packaging type to `liberty-assembly`. This can be added after the
 <packaging>liberty-assembly</packaging>
 ```
 
-From our [Liberty Maven Plugin](https://github.com/WASdev/ci.maven) documentation:
+From our [Liberty Maven Plugin](https://github.com/WASdev/ci.maven/tree/tools-integration) documentation:
 
-> The `liberty-assembly` Maven packaging type is used to create a packaged Liberty profile server Maven artifact out of existing server installation, compressed archive, or another server Maven artifact. Any applications specified as Maven compile dependencies will be automatically packaged with the assembled server. Liberty features can also be installed and packaged with the assembled server.
+> The liberty-assembly Maven packaging type is used to create a packaged Liberty server Maven artifact out of existing server installation, compressed archive, or another server Maven artifact. Any applications specified as Maven compile dependencies will be automatically packaged with the assembled server. Liberty features can also be installed and packaged with the assembled server. Any application or test code included in the project is automatically compiled and tests run at appropriate unit or integration test phase. Application code is installed as a loose application WAR file if installAppPackages is set to all or project and looseApplication is set to true.
 
 ### Update Project Name
 
@@ -43,7 +43,7 @@ Optionally, we also change the name of the Maven project to `websocketApp`:
 
 ### Add Sonatype Repository
 
-In order to use version `2.0-SNAPSHOT` of the `liberty-maven-plugin` (as described below), we'll need to add the Sonatype repository to our project:
+In this example, we'll be using version `2.0-SNAPSHOT` of the `liberty-maven-plugin`. This is a beta version of our plugin which offers significant usability and convenience improvements compared to our previous release version. To use the `2.0-SNAPSHOT`, we'll need to add the Sonatype repository to our project:
 
 ```
 <pluginRepositories>
@@ -102,11 +102,11 @@ We'll also need to make a modification to the `org.springframework.boot.spring-b
 </exclusions>
 ```
 
-Note: according to our logs, the Liberty implementation of websocket will not be used if you don't add the exclusion above. 
+Note: According to our logs, the Liberty implementation of websocket will not be used if you don't add the exclusion above. 
 
 ### Add Arquillian Dependencies
 
-We'll be using [Arquillian](http://arquillian.org/) to run our integration tests, instead of the default Spring Boot testing framework. This is because in migrating to Liberty, we also want to run our test cases on our Liberty server, rather than using a Spring Boot embedded server. To do this, we'll be using the `arquillian-wlp-managed` container and providing the appropriate configuration in the next section.
+We'll be using [Arquillian](http://arquillian.org/) to run our integration tests, instead of the default Spring Boot testing framework. This is because we want run our test cases on our Liberty server, rather than using a Spring Boot embedded server. To do this, we'll be using the `arquillian-wlp-managed` container and providing the appropriate configuration in the next section.
 
 To add Arquillian to our project, first add `arquillian-bom` under the `dependencyManagement` section of the POM:
 
@@ -235,7 +235,7 @@ Recall that we added the Sonatype repository to our POM previously, in order to 
 
 Here, we create a server called "websocketServer" and set the `packageFile` parameter to the desired file name and location of our packaged server. As per our `package-server` goal [guidelines](https://github.com/WASdev/ci.maven/blob/master/docs/package-server.md), we add `<include>runnable</include>` to the configuration to indicate that we want to package the server into a runnable JAR. Notice also that in our `install-apps` execution goal, we set `<appsDirectory>apps</appsDirectory>` to indicate that we want our application to be installed in the `apps` directory of the server rather than the default `dropins` directory. Note that this is an optional modification. 
 
-Furthermore, note that we have added two executions to the plugin. These executions skips the `start-server` and `stop-server` goals which, by default, run in the `pre-integration-test` and `post-integration-test` build phases respectively. We need to remove these goals as the Arquillian container for Liberty expects that the server be created, but not running, when the integration tests are ran. 
+Furthermore, note that we have added two executions to the plugin. These executions skip the `start-server` and `stop-server` goals which, by default, run in the `pre-integration-test` and `post-integration-test` build phases respectively. We need to remove these goals as the Arquillian container for Liberty expects that the server be created, but not running, when the integration tests run. 
 
 As an aside, we can also remove the `spring-boot-maven-plugin` which was included by default in the POM. The `liberty-maven-plugin` is the only plugin you will need for this project.
 
@@ -243,7 +243,7 @@ As an aside, we can also remove the `spring-boot-maven-plugin` which was include
 
 After modifying our POM, the next step is to create a `server.xml` file and add our server configuration. By default, this file should be located at `src/test/resources/server.xml`, although you can modify this by changing the `configFile` configuration parameter in the `liberty-maven-plugin` (we provide this code in our example above, although it is commented out because we're using the default location for this sample project). 
 
-Once you have created your `server.xml`, add the following code:
+Once you have created your `server.xml` file, add the following code:
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -337,11 +337,11 @@ public class Application extends SpringBootServletInitializer {
 
 ### Checkpoint
 
-If you've made it this far, you should done everything you need to successfully start your WebSocket application on a Liberty server. Take a minute to check whether you're on track. 
+If you've made it this far, you should have done everything you need to successfully start your WebSocket application on a Liberty server. Take a minute to check whether you're on track. 
 
-Start the application (by running `mvn install liberty:run-server -DskipTests=true`) and access its context root at `http://localhost:9080/` (we skip tests because we're not done configuring them yet). You should see the static `index.html` page being displayed. This is good news; it means the server started up and has successfully loaded your application source.
+Start the application (by running `mvn install liberty:run-server -DskipTests=true`) and access its context root at `http://localhost:9080/`. We skip tests because we're not done configuring them yet. You should see the static `index.html` page being displayed. This is good news; it means the server started up and has successfully loaded your application source.
  
-However, you'll also notice (especially if you ran the project first as a Spring Boot standalone application) that the styling for the page is not correct. Additionally, the web socket is not actually functional, as the interface is not responsive. This is because there are some more changes you'll have to make for application to run properly when deployed as a WAR. 
+However, you'll also notice (especially if you ran the project first as a Spring Boot standalone application) that the styling for the page is not correct. Additionally, the WebSocket endpoint is not actually functional, as the interface is not responsive. This is because there are some more changes you'll have to make for the application to run properly when deployed as a WAR. 
 
 ### WebSocket and WebJars Configuration
 
@@ -410,7 +410,9 @@ Here, we register our `WebConfig` class (which also includes our `WebSocketConfi
 
 We're almost done! The final step is to modify our integration test to run properly on Arquillian. 
 
-First, we'll need to rename the test class name to end in `TestIT`, to indicate that we're running an integration test. Specifically, we changed the class name from `GreetingIntegrationTests` to `GreetingIntegrationTestIT`. 
+The `liberty-maven-plugin` integrates the `maven-failsafe-plugin` to run integration tests after the server has been created. According to the `maven-failsafe-plugin` [documentation](http://maven.apache.org/surefire/maven-failsafe-plugin/examples/inclusion-exclusion.html), the plugin will automatically include all test cases that match the `**/*IT.java` wildcard pattern. Thus, we rename the test class name from `GreetingIntegrationTests` to `GreetingIntegrationTestIT`. 
+
+Alternatively, you can configure the plugin to include specific tests by name which do not match this pattern. 
 
 Next, change the `@RunWith(SpringRunner.class)` annotation to `@RunWith(Arquillian.class)` to indicate that we want to use Arquillian to run the test case. 
 
