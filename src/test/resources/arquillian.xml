@@ -7,7 +7,7 @@
 	</engine>
 	<container qualifier="websphere" default="true">
 		<configuration>
-			<property name="wlpHome">C:\Users\IBM_ADMIN\websphere-test\websocket-liberty\target\wlp</property>
+			<property name="wlpHome">target/wlp</property>
 			<property name="serverName">websocketServer</property>
 			<property name="httpPort">9080</property>
 			<property name="outputToConsole">true</property>

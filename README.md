@@ -292,7 +292,7 @@ We also have to add the appropriate Arquillian configuration for our integration
 	</engine>
 	<container qualifier="websphere" default="true">
 		<configuration>
-			<property name="wlpHome">target\wlp</property>
+			<property name="wlpHome">target/wlp</property>
 			<property name="serverName">websocketServer</property>
 			<property name="httpPort">9080</property>
 			<property name="outputToConsole">true</property>
