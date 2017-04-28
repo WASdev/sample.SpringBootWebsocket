@@ -172,29 +172,8 @@
 					<appsDirectory>apps</appsDirectory>
 					<stripVersion>true</stripVersion>
 					<looseApplication>true</looseApplication>
+					<skipTestServer>true</skipTestServer>
 				</configuration>
-				<executions>
-					<execution>
-						<id>default-start-server</id>
-						<phase>pre-integration-test</phase>
-						<goals>
-							<goal>start-server</goal>
-						</goals>
-						<configuration>
-							<skip>true</skip>
-						</configuration>
-					</execution>
-					<execution>
-						<id>default-stop-server</id>
-						<phase>post-integration-test</phase>
-						<goals>
-							<goal>stop-server</goal>
-						</goals>
-						<configuration>
-							<skip>true</skip>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 
