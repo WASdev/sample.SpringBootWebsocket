@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="new server">
+	<application context-root="/"
+		location="gs-messaging-stomp-websocket.war"></application>
+
+	<!-- Enable features -->
+	<featureManager>
+		<feature>jsp-2.3</feature>
+		<feature>websocket-1.1</feature>
+		<feature>localConnector-1.0</feature>
+	</featureManager>
+
+	<!-- Logging to verify that we are using Liberty's websocket implementation -->
+	<!-- <logging
+		traceSpecification="com.ibm.websphere.javaee.websocket.*=all:com.ibm.ws.wsoc.*=all:com.ibm.websphere.wsoc.*=all:com.ibm.websphere.appserver.api.wsoc.*=all:com.ibm.websphere.appserver.websocket.*=all:javax.websocket.*=all"
+		traceFileName="trace.log" maxFileSize="1000" maxFiles="10"
+		traceFormat="BASIC" /> -->
+
+	<!-- To access this server from a remote client add a host attribute to 
+		the following element, e.g. host="*" -->
+	<httpEndpoint id="defaultHttpEndpoint" httpPort="9080"
+		httpsPort="9443" />
+
+	<!-- Automatically expand WAR files and EAR files -->
+	<applicationManager autoExpand="true" />
+
+	<!-- Automatically load the Spring application endpoint once the server 
+		is ready. -->
+	<webContainer deferServletLoad="false" />
+
+</server>
