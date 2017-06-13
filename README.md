@@ -1,4 +1,4 @@
-# Running a Spring Boot WebSocket Application on Liberty Using Maven
+# Running a Spring Boot WebSocket Application on Liberty Using Maven [![Build Status](https://travis-ci.org/WASdev/sample.SpringBootWebsocket.svg?branch=master)](https://travis-ci.org/WASdev/sample.SpringBootWebsocket)
 
 This tutorial demonstrates the entire process of modifying a sample Spring Boot WebSocket project to run as a packaged Liberty assembly. The end result is a standalone runnable JAR which contains the WebSocket application deployed on a Liberty server.
 
@@ -39,27 +39,6 @@ Optionally, we also change the name of the Maven project to `websocketApp`:
 
 ```
 <name>websocketApp</name>
-```
-
-### Add Sonatype Repository
-
-In this example, we'll be using version `2.0-SNAPSHOT` of the `liberty-maven-plugin`. This is a beta version of our plugin which offers significant usability and convenience improvements compared to our previous release version. To use the `2.0-SNAPSHOT`, we'll need to add the Sonatype repository to our project:
-
-```
-<pluginRepositories>
-	<!-- Configure Sonatype OSS Maven snapshots repository -->
-	<pluginRepository>
-		<id>sonatype-nexus-snapshots</id>
-		<name>Sonatype Nexus Snapshots</name>
-		<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-		<snapshots>
-			<enabled>true</enabled>
-		</snapshots>
-		<releases>
-			<enabled>false</enabled>
-		</releases>
-	</pluginRepository>
-</pluginRepositories>
 ```
 
 ### Add Liberty Dependencies
@@ -175,13 +154,13 @@ Note the addition of the `<start-class>` property. We'll discuss this is greater
 
 ### Add the `liberty-maven-plugin`
 
-Recall that we added the Sonatype repository to our POM previously, in order to use the `2.0-SNAPSHOT` version of the `liberty-maven-plugin`. We will now add the plugin and configure it:
+We now add version `2.0` of the `liberty-maven-plugin` and configure it:
 
 ```
 <plugin>
 	<groupId>net.wasdev.wlp.maven.plugins</groupId>
 	<artifactId>liberty-maven-plugin</artifactId>
-	<version>2.0-SNAPSHOT</version>
+	<version>2.0</version>
 	<extensions>true</extensions>
 	<!-- Specify configuration, executions for liberty-maven-plugin -->
 	<configuration>
