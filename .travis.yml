@@ -4,5 +4,7 @@ matrix:
     - jdk: oraclejdk8
 script:
   - mvn -N io.takari:maven:wrapper
+  - pwd
+  - ls
   - mvn clean
   - mvn -q install
