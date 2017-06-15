@@ -416,7 +416,7 @@ There are just a few small changes we have to make before our WebSocket applicat
 
 ### WebJars Locator
 
-Because Liberty uses the `wsjar` prefix by default instead of the standard `jar` prefix, `webjar-locator` won't be compatible with Liberty without some additional configuration. To resolve this issue, make the following changes:
+Because Liberty uses the `wsjar` prefix by default instead of the standard `jar` prefix, `webjar-locator` is not compatible with Liberty without some additional configuration. To resolve this issue, make the following changes:
 
 #### Update Server Configuration
 
