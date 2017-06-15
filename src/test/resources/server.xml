@@ -27,5 +27,8 @@
 	<!-- Automatically load the Spring application endpoint once the server 
 		is ready. -->
 	<webContainer deferServletLoad="false" />
+	
+	<!-- For compatibility with webJARS Locator, use jar:// instead of the default wsjar:// URLs for referencing files in archives -->
+	<classloading useJarUrls="true" />
 
 </server>
