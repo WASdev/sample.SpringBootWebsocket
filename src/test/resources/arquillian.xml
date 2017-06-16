@@ -11,6 +11,7 @@
 			<property name="serverName">websocketServer</property>
 			<property name="httpPort">9080</property>
 			<property name="outputToConsole">false</property>
+			<property name="allowConnectingToRunningServer">true</property>
 		</configuration>
 	</container>
 </arquillian>
