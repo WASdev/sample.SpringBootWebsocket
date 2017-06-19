@@ -5,6 +5,3 @@ matrix:
 script:
   - mvn -N io.takari:maven:wrapper
   - mvn install
-  - cd target/wlp/usr/servers/websocketServer/logs/
-  - ls -l
-  - cat messages.log
