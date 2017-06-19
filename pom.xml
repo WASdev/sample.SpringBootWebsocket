@@ -138,8 +138,8 @@
 					<serverName>websocketServer</serverName>
 					<assemblyArtifact>
 						<groupId>com.ibm.websphere.appserver.runtime</groupId>
-						<artifactId>wlp-webProfile7</artifactId>
-						<version>16.0.0.4</version>
+						<artifactId>wlp-javaee7</artifactId>
+						<version>17.0.0.1</version>
 						<type>zip</type>
 					</assemblyArtifact>
 					<assemblyInstallDirectory>${project.build.directory}</assemblyInstallDirectory>
@@ -157,7 +157,6 @@
 					<appsDirectory>apps</appsDirectory>
 					<stripVersion>true</stripVersion>
 					<looseApplication>true</looseApplication>
-					<skipTestServer>true</skipTestServer>
 				</configuration>
 			</plugin>
 		</plugins>
