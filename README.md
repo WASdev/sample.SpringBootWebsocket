@@ -253,8 +253,8 @@ We also have to add the appropriate Arquillian configuration for our integration
 			<property name="wlpHome">target/wlp</property>
 			<property name="serverName">websocketServer</property>
 			<property name="httpPort">9080</property>
-            <property name="outputToConsole">true</property>
-            <property name="appDeployTimeout">600</property>
+			<property name="outputToConsole">true</property>
+			<property name="appDeployTimeout">600</property>
 		</configuration>
 	</container>
 </arquillian>
