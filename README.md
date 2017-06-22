@@ -254,12 +254,13 @@ We also have to add the appropriate Arquillian configuration for our integration
 			<property name="serverName">websocketServer</property>
 			<property name="httpPort">9080</property>
 			<property name="outputToConsole">true</property>
+			<property name="appDeployTimeout">600</property>
 		</configuration>
 	</container>
 </arquillian>
 ```
 
-You may have to change the value of the `wlpHome` property to the appropriate directory where your server was installed. You can read [this article](https://developer.ibm.com/wasdev/docs/getting-started-liberty-arquillian/) for some more information and another example of using Arquillian with Liberty. 
+You may have to change the value of the `wlpHome` property to the appropriate directory where your server was installed. You can read [this article](https://developer.ibm.com/wasdev/docs/getting-started-liberty-arquillian/) for more information and another example of using Arquillian with Liberty. 
 
 ## <a name="code"></a>Code Changes
 
@@ -409,6 +410,8 @@ public static WebArchive createDeployment() {
 ```
 
 The archive includes all the runtime dependencies from our POM, as well as all our of source classes, which are referenced from the test case code.
+
+Note that in our sample code, we increase the integration test timeout from 3 seconds to 5 seconds. This is to ensure the test has sufficient time to run in Travis. 
 
 ## <a name="issues"></a>Final Issues
 

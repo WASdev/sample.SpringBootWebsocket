@@ -11,10 +11,9 @@
 	</featureManager>
 
 	<!-- Logging to verify that we are using Liberty's websocket implementation -->
-	<!-- <logging
-		traceSpecification="com.ibm.websphere.javaee.websocket.*=all:com.ibm.ws.wsoc.*=all:com.ibm.websphere.wsoc.*=all:com.ibm.websphere.appserver.api.wsoc.*=all:com.ibm.websphere.appserver.websocket.*=all:javax.websocket.*=all"
-		traceFileName="trace.log" maxFileSize="1000" maxFiles="10"
-		traceFormat="BASIC" /> -->
+	<!-- <logging traceSpecification="com.ibm.websphere.javaee.websocket.*=all:com.ibm.ws.wsoc.*=all:com.ibm.websphere.wsoc.*=all:com.ibm.websphere.appserver.api.wsoc.*=all:com.ibm.websphere.appserver.websocket.*=all:javax.websocket.*=all" 
+		traceFileName="trace.log" maxFileSize="1000" maxFiles="10" traceFormat="BASIC" 
+		/> -->
 
 	<!-- To access this server from a remote client add a host attribute to 
 		the following element, e.g. host="*" -->
@@ -27,8 +26,9 @@
 	<!-- Automatically load the Spring application endpoint once the server 
 		is ready. -->
 	<webContainer deferServletLoad="false" />
-	
-	<!-- For compatibility with webJARS Locator, use jar:// instead of the default wsjar:// URLs for referencing files in archives -->
+
+	<!-- For compatibility with webJARS Locator, use jar:// instead of the default 
+		wsjar:// URLs for referencing files in archives -->
 	<classloading useJarUrls="true" />
 
 </server>
