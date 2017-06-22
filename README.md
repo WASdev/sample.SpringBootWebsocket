@@ -253,13 +253,14 @@ We also have to add the appropriate Arquillian configuration for our integration
 			<property name="wlpHome">target/wlp</property>
 			<property name="serverName">websocketServer</property>
 			<property name="httpPort">9080</property>
-			<property name="outputToConsole">true</property>
+            <property name="outputToConsole">true</property>
+            <property name="appDeployTimeout">600</property>
 		</configuration>
 	</container>
 </arquillian>
 ```
 
-You may have to change the value of the `wlpHome` property to the appropriate directory where your server was installed. You can read [this article](https://developer.ibm.com/wasdev/docs/getting-started-liberty-arquillian/) for some more information and another example of using Arquillian with Liberty. 
+You may have to change the value of the `wlpHome` property to the appropriate directory where your server was installed. You can read [this article](https://developer.ibm.com/wasdev/docs/getting-started-liberty-arquillian/) for more information and another example of using Arquillian with Liberty. 
 
 ## <a name="code"></a>Code Changes
 

@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -70,10 +69,6 @@ public class GreetingIntegrationTestIT {
 
 	@Test
 	public void getGreeting() throws Exception {
-		
-		System.out.println("Test starting");
-		
-    	Date d1 = new Date();
 
 		final CountDownLatch latch = new CountDownLatch(1);
 		final AtomicReference<Throwable> failure = new AtomicReference<>();
@@ -114,25 +109,11 @@ public class GreetingIntegrationTestIT {
 
 		if (latch.await(10, TimeUnit.SECONDS)) {
 			if (failure.get() != null) {
-				
-				Date d2 = new Date();
-	        	long diff = d2.getTime() - d1.getTime();
-	        	System.out.println("Test took " + diff + " ms and failed");
-				
 				throw new AssertionError("", failure.get());
 			}
 		} else {
-			
-			Date d2 = new Date();
-        	long diff = d2.getTime() - d1.getTime();
-        	System.out.println("Test took " + diff + " ms and failed");
-			
 			fail("Greeting not received");
 		}
-		
-		Date d2 = new Date();
-    	long diff = d2.getTime() - d1.getTime();
-    	System.out.println("Test took " + diff + " ms and passed");
 
 	}
 
