@@ -411,6 +411,8 @@ public static WebArchive createDeployment() {
 
 The archive includes all the runtime dependencies from our POM, as well as all our of source classes, which are referenced from the test case code.
 
+Note that in our sample code, we increase the integration test timeout from 3 seconds to 5 seconds. This is to ensure the test has sufficient time to run in Travis. 
+
 ## <a name="issues"></a>Final Issues
 
 There are just a few small changes we have to make before our WebSocket application can run on Liberty. We describe them here:
