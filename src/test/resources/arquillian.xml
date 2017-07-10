@@ -11,7 +11,7 @@
 			<property name="serverName">websocketServer</property>
 			<property name="httpPort">9080</property>
 			<property name="outputToConsole">true</property>
-			<property name="appDeployTimeout">600</property>
+			<property name="appDeployTimeout">60</property>
 		</configuration>
 	</container>
 </arquillian>
