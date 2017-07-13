@@ -294,80 +294,7 @@ public class Application extends SpringBootServletInitializer {
 }
 ```
 
-### Checkpoint
-
-If you've made it this far, you should have done everything you need to successfully start your WebSocket application on a Liberty server. Take a minute to check whether you're on track. 
-
-Start the application (by running `mvn install liberty:run-server -DskipTests=true`) and access its context root at `http://localhost:9080/`. We skip tests because we're not done configuring them yet. You should see the static `index.html` page being displayed. This is good news; it means the server started up and has successfully loaded your application source.
- 
-However, you'll also notice (especially if you ran the project first as a Spring Boot standalone application) that the styling for the page is not correct. Additionally, the WebSocket endpoint is not actually functional, as the interface is not responsive. This is because there are some more changes you'll have to make for the application to run properly when deployed as a WAR. 
-
-### WebSocket and WebJars Configuration
-
-According to [this StackOverflow answer](http://stackoverflow.com/a/32710851/634324), the aforementioned problems stem from the fact that Spring Boot automatically performs some key configuration when the application is run standalone, but this configuration needs to be done manually when deploying to an external server as a WAR. 
-
-In order to get all of your WebJars dependencies working properly, create a new class called `WebConfig` and add the following code:
-
-**`src/main/java/hello/WebConfig.java`**
-
-```
-package hello;
-
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
-
-@Configuration
-@ComponentScan("hello")
-@Import({ WebSocketConfig.class })
-public class WebConfig extends WebMvcConfigurerAdapter {
-
-	@Override
-	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
-	}
-
-}
-```
-
-In the `addResourceHandlers` method, you're specifying a new resource handler which maps the URL pattern `/webjars/**` (which matches all nested directories and files inside the `/webjars` directory) to the corresponding location in the classpath. This way, the server will be able to find these WebJars dependencies when they're requested.
-
-Additionally, notice the `@ComponentScan` and `@Import` annotations. These tell Spring to look in the "hello" package and import the `WebSocketConfig` class, which was provided in the original project code. By doing this, when we register the `WebConfig` class to be processed in our application context (which we'll do in a second), Spring will automatically include the configuration in `WebSocketConfig` as well. 
-
-### DispatcherServlet Setup
-
-We now need to tie our configuration files in with the application context. To do this, add the following code to your `Application` class:
-
-```
-import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
-import org.springframework.web.servlet.DispatcherServlet;
-
-import javax.servlet.ServletRegistration.Dynamic;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-
-...
-
-@Override
-public void onStartup(ServletContext servletContext) throws ServletException {
-	AnnotationConfigWebApplicationContext ctx = new AnnotationConfigWebApplicationContext();
-	ctx.register(WebConfig.class);
-	ctx.setServletContext(servletContext);
-	Dynamic dynamic = servletContext.addServlet("dispatcher", new DispatcherServlet(ctx));
-	dynamic.addMapping("/");
-	dynamic.setLoadOnStartup(1);
-	dynamic.setAsyncSupported(true);
-}
-```
-
-Here, we register our `WebConfig` class (which also includes our `WebSocketConfig` class) with the application context, and also add a new `DispatcherServlet` to the servlet context. The final line in the method (`dynamic.setAsyncSupported(true);`) is important because our WebSocket application requires support for asynchronous operations in order to run properly.
-
 ### Integration Test Changes
-
-We're almost done! The final step is to modify our integration test to run properly on Arquillian. 
 
 The `liberty-maven-plugin` integrates the `maven-failsafe-plugin` to run integration tests after the server has been created. According to the `maven-failsafe-plugin` [documentation](http://maven.apache.org/surefire/maven-failsafe-plugin/examples/inclusion-exclusion.html), the plugin will automatically include all test cases that match the `**/*IT.java` wildcard pattern. Thus, we rename the test class name from `GreetingIntegrationTests` to `GreetingIntegrationTestIT`. 
 
@@ -419,31 +346,13 @@ There are just a few small changes we have to make before our WebSocket applicat
 
 ### WebJars Locator
 
-Because Liberty uses the `wsjar` prefix by default instead of the standard `jar` prefix, `webjar-locator` is not compatible with Liberty without some additional configuration. To resolve this issue, make the following changes:
-
-#### Update Server Configuration
-
-Add the following line to `server.xml`:
+Because Liberty uses the `wsjar` prefix by default instead of the standard `jar` prefix, `webjar-locator` is not compatible with Liberty without some additional configuration. To resolve this issue, add the following line to `server.xml`:
 
 ```
 <classloading useJarUrls="true" />
 ```
 
 According to our [documentation](https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.liberty.autogen.base.doc/ae/rwlp_config_classloading.html), this flag determines whether to use `jar:` or `wsjar:` URLs for referencing files in archives. This will allow `webjars-locator` to find the JARs it needs. 
-
-#### Update Resource Handler
-
-Recall that we added a resource handler in `WebConfig.java` in order to map the static resources on the classpath to public URLs. Replace that line with the following code:
-
-```
-registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/").resourceChain(false);
-```
-
-Notice that the only difference is the addition of `resourceChain(false)` to the end of the line. According to the [Javadoc](http://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/config/annotation/ResourceHandlerRegistration.html): 
-
->If this method is not invoked, by default only a simple PathResourceResolver is used in order to match URL paths to resources under the configured locations.
-
-As mentioned in the documentation, you might wish to set the `cacheResources` parameter to `true` when running in a production environment.
 
 ### SockJS
 
